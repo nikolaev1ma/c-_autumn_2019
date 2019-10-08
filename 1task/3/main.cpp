@@ -1,3 +1,6 @@
+// ссылка на контест:
+// https://contest.yandex.ru/contest/13875/standings/
+
 #include <iostream>
 #include <string>
 #include <vector>
