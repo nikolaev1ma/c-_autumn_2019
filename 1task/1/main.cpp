@@ -86,9 +86,9 @@ void ProcessingStr::FindNextTemp(char letter) {
 }
 
 int main() {
-  string temp; //шаблон
-  cin >> temp;
-  ProcessingStr my_class(temp);
+  string pattern;
+  cin >> pattern;
+  ProcessingStr my_class(pattern);
   my_class.PrefixFunction(); //считаем префикс от шаблона с # на конце
   cin.tie(nullptr);
   char letter;
