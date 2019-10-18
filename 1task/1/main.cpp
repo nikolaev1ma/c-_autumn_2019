@@ -1,5 +1,5 @@
 // ссылка на контест:
-// https://contest.yandex.ru/contest/13875/standings/
+// https://contest.yandex.ru/contest/13875/run-report/22828524/
 
 #include <iostream>
 #include <string>
@@ -15,7 +15,7 @@ public:
   //сразу добавляем в конец строки знак #
   // prefix[size_of_str] = 0, тк str[size_of_str] = '#', именно этот префикс мы
   // и запоминаем изначально
-  ProcessingStr(string &str_);
+  ProcessingStr(string str_);
 
   //вычисление префикс функции строки
   void PrefixFunction();
@@ -36,7 +36,7 @@ private:
   int position_in_added_str; //счетчик по текущему состоянию строки
 };
 
-ProcessingStr::ProcessingStr(string &str_)
+ProcessingStr::ProcessingStr(string str_)
     : str(std::move(str_) + '#'), penultimate_prefix(0),
       size_of_str(str.size() - 1), position_in_added_str(1) {}
 
@@ -86,12 +86,11 @@ void ProcessingStr::FindNextTemp(char letter) {
 }
 
 int main() {
+  cin.tie(nullptr);
   string pattern;
   cin >> pattern;
   ProcessingStr my_class(pattern);
   my_class.PrefixFunction(); //считаем префикс от шаблона с # на конце
-  cin.tie(nullptr);
-  char letter;
   string str;
   cin >> str;
   for (auto letter : str) {
