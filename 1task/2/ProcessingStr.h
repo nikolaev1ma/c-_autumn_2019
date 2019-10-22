@@ -16,9 +16,9 @@ using std::vector;
 
 class ProcessingStr {
 public:
-  ProcessingStr(string str_): str(std::move(str_)), str_size(str.size()) {}
+  ProcessingStr(string str_) : str(std::move(str_)), str_size(str.size()) {}
 
-  ProcessingStr(int str_size_) :str_size(str_size_) {}
+  ProcessingStr(int str_size_) : str_size(str_size_) {}
 
   ProcessingStr() {}
 
@@ -34,9 +34,7 @@ public:
   }
 
   //вывод
-  void CoutStr() {
-    cout << "str:\n" << str << "\n";
-  }
+  void CoutStr() { cout << "str:\n" << str << "\n"; }
 
   void CoutPrefix() {
     cout << "prefix:\n";
@@ -78,5 +76,3 @@ private:
   vector<int> z;
   int str_size;
 };
-
-

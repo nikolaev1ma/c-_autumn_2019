@@ -4,7 +4,7 @@ void ProcessingStr::GetPrefixFromStr() {
   prefix.reserve(str_size);
   prefix.emplace_back(0);
   for (int i = 1; i < str_size; ++i) {
-    //если str[prefix[i - 1]] = str[i], то очевидно что
+    // если str[prefix[i - 1]] = str[i], то очевидно что
     // prefix[i] = prefix[i - 1] + 1 если же нет, то просто рекурсивно
     // спускаемся
     int tmp_prefix = prefix[i - 1];

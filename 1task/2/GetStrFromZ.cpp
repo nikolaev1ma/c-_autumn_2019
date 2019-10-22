@@ -63,11 +63,11 @@ private:
   string substr;
   int right; // самая правая обработанная позиция
   vectorZT can_use; // для пары [буква, позиция] определяем, может ли
-                 // исполбзоваться эта буква на этой позиции
+                    // исполбзоваться эта буква на этой позиции
 };
 
 void ProcessingStr::GetStrFromZ() {
   GetStrByZ auxiliary_class(std::move(z)); // вспомогательный класс
-  auxiliary_class.Recovery();   // востанавливаем строку
-  str = auxiliary_class.Str();  // присваиваем
+  auxiliary_class.Recovery();  // востанавливаем строку
+  str = auxiliary_class.Str(); // присваиваем
 }
