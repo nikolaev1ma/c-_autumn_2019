@@ -16,7 +16,8 @@ using std::vector;
 
 class ProcessingStr {
 public:
-  ProcessingStr(string str_) : str(std::move(str_)), str_size(str.size()) {}
+  ProcessingStr(string str_)
+      : str(std::move(str_)), str_size(str.size()), initialized_str(true) {}
 
   ProcessingStr(int str_size_) : str_size(str_size_) {}
 
@@ -26,30 +27,19 @@ public:
   void PutPrefix(const vector<int> &prefix_) {
     prefix = prefix_;
     str_size = prefix.size();
+    initialized_prefix = true;
   }
 
   void PutZ(const vector<int> &z_) {
     z = z_;
     str_size = prefix.size();
+    initialized_z = true;
   }
 
   //вывод
-  void CoutStr() { cout << "str:\n" << str << "\n"; }
-
-  void CoutPrefix() {
-    cout << "prefix:\n";
-    for (int i = 0; i < str_size; ++i) {
-      cout << prefix[i] << " ";
-    }
-    cout << "\n";
-  }
-
-  void CoutZ() {
-    cout << "z:\n";
-    for (int i = 0; i < str_size; ++i) {
-      cout << z[i] << " ";
-    }
-    cout << "\n";
+  friend std::ostream &operator<<(std::ostream &out, const ProcessingStr &c) {
+    out << "str:\n" << c.str << "\n";
+    return out;
   }
 
   // str -> prefix
@@ -75,4 +65,8 @@ private:
   vector<int> prefix;
   vector<int> z;
   int str_size;
+
+  bool initialized_prefix;
+  bool initialized_z;
+  bool initialized_str;
 };

@@ -4,7 +4,23 @@ int const size_alphabet = 26;
 
 class GetStrByPrefix {
 public:
-  GetStrByPrefix(vector<int> prefix_) { prefix = std::move(prefix_); }
+  GetStrByPrefix(vector<int> prefix_) : prefix(std::move(prefix_)) {
+    Recovery();  // находим для него строку
+  }
+
+  string Str() const { return str; }
+
+private:
+  vector<int> prefix;
+  string str;
+
+  // заполнение строки
+  void Recovery() {
+    str = 'a'; //первая буква вседа 'a'
+    for (int i = 1; i < prefix.size(); ++i) {
+      AddLetter(i); // заполняем побуквенно строку
+    }
+  }
 
   // добавляем букву на n место
   void AddLetter(int n) {
@@ -14,8 +30,8 @@ public:
       return;
     }
     vector<bool> can_use_letter(
-        size_alphabet); // can_use_letter[l] - может ли находиться буква
-                        // l на позиции n
+            size_alphabet); // can_use_letter[l] - может ли находиться буква
+    // l на позиции n
     for (char letter = 'a'; letter <= 'z'; ++letter) {
       // изначально каждая буква может находиться на позиции n
       can_use_letter[letter - 'a'] = true;
@@ -38,25 +54,13 @@ public:
       str += '?';
     }
   }
-
-  // заполнение строки
-  void Recovery() {
-    str = 'a'; //первая буква вседа 'a'
-    for (int i = 1; i < prefix.size(); ++i) {
-      AddLetter(i); // заполняем побуквенно строку
-    }
-  }
-
-  string Str() const { return str; }
-
-private:
-  vector<int> prefix;
-  string str;
 };
 
 void ProcessingStr::GetStrFromPrefix() {
-  GetStrByPrefix auxiliary_class(
-      std::move(prefix)); // создаем вспомогательный класс
-  auxiliary_class.Recovery();  // находим для него строку
-  str = auxiliary_class.Str(); // присваиваем
+  if (!initialized_str) {
+    initialized_str = true;
+    GetStrByPrefix auxiliary_class(
+            std::move(prefix)); // создаем вспомогательный класс
+    str = auxiliary_class.Str(); // присваиваем
+  }
 }

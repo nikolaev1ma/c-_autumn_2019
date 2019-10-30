@@ -7,12 +7,12 @@ public:
   GetStrByZ(vector<int> z_) : z(std::move(z_)), right(1) {
     // изначально любая буква может стоять на любой позиции
     can_use.resize(z.size());
-    can_use.reserve(z.size());
     for (int i = 0; i < z.size(); ++i) {
       for (char letter = 'a'; letter <= 'z'; ++letter) {
         can_use[i].emplace_back(true);
       }
     }
+    Recovery(); // востанавливаем строку
   }
 
   //вычисляем букву на n позиции
@@ -63,11 +63,13 @@ private:
   string substr;
   int right; // самая правая обработанная позиция
   vectorZT can_use; // для пары [буква, позиция] определяем, может ли
-                    // исполбзоваться эта буква на этой позиции
+  // исполбзоваться эта буква на этой позиции
 };
 
 void ProcessingStr::GetStrFromZ() {
-  GetStrByZ auxiliary_class(std::move(z)); // вспомогательный класс
-  auxiliary_class.Recovery();  // востанавливаем строку
-  str = auxiliary_class.Str(); // присваиваем
+  if (!initialized_str) {
+    initialized_str = true;
+    GetStrByZ auxiliary_class(std::move(z)); // вспомогательный класс
+    str = auxiliary_class.Str();             // присваиваем
+  }
 }

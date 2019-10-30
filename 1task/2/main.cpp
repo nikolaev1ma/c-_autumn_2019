@@ -12,7 +12,7 @@ int main() {
     prefix.emplace_back(input);
   }
   ProcessingStr my_class;
-  my_class.PutPrefix(prefix); //инициализация префикса
+  my_class.PutPrefix(std::move(prefix)); //инициализация префикса
   my_class.GetStrFromPrefix(); // получаем строку по префиксу
-  my_class.CoutStr();          //вывод
+  cout << my_class;            //вывод
 }
