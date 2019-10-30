@@ -89,7 +89,7 @@ public:
   CVector CrossProduct(const CVector &a) {
     return CVector(y * a.GetZ() - z * a.GetY(), z * a.GetX() - x * a.GetZ(), x * a.GetY() - y * a.GetX());
   }
-  
+
 private:
   double x;
   double y;
