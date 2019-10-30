@@ -28,8 +28,8 @@ class ProcessingString {
 public:
   ProcessingString(string str_, string temp_);
 
-  // храним здесь всю логику
-  void Implementation();
+  // вывод результата
+  void Result() const;
 
 private:
   string str;              // строка
@@ -41,9 +41,6 @@ private:
                                        // могут начаться в этой месте строки
   vector<Node> bor;
   int sz_bor;
-
-  // вывод результата
-  void Result();
 
   // обработка текста
   void ProcessText();
@@ -70,21 +67,22 @@ private:
   int Way(int vertex, char letter);
 
   // взвращает краткую суффикную ссылку vertex
-  const int GetUp(int vertex);
+  int GetUp(int vertex);
 };
 
 ProcessingString::ProcessingString(string str_, string temp_)
-    : str(std::move(str_)), temp(std::move(temp_)) {
-  temp_arr.resize(1);
-  pos_in_temp.resize(1);
+    : str(std::move(str_)), temp(std::move(temp_)), temp_arr(vector<string>(1)),
+      pos_in_temp(vector<int>(1)) {
   FillTempArr();
   InitBor();
   count_of_temps_in_this_position.resize(str.size());
+  BuildBor();    // построение бора
+  ProcessText(); // поиск шаблонов в строке
 }
 
 void ProcessingString::ProcessText() {
   int cur = 0; // место, где мы находимся в bor
-  for (int i = 0; i < str.size(); ++i) {
+  for (unsigned int i = 0; i < str.size(); ++i) {
     char letter = str[i] - 'a'; // текущая обрабатываемая буква
     cur = Way(cur, letter); // продвигаемся по бору
     int search_temp = cur;
@@ -94,7 +92,7 @@ void ProcessingString::ProcessText() {
       vector<int> tmp =
           bor[search_temp].pattern_leaf_here; // массив всех шаблонов,
       // заканчивающихся в search_temp
-      for (int j = 0; j < tmp.size(); ++j) {
+      for (unsigned int j = 0; j < tmp.size(); ++j) {
         int cur_temp = tmp[j];
         int len_cur_temp =
             pos_in_temp[cur_temp]; // позиция данного шаблона без маски
@@ -108,8 +106,9 @@ void ProcessingString::ProcessText() {
   }
 }
 
-void ProcessingString::Result() {
-  for (int i = 0; i < std::min(str.size(), str.size() - temp.size() + 1); ++i) {
+void ProcessingString::Result() const {
+  for (unsigned int i = 0;
+       i < std::min(str.size(), str.size() - temp.size() + 1); ++i) {
     // если в i позиции строки начинаются все шаблоны без маски, то здесь
     // начинаются и наш шаблон
     if (count_of_temps_in_this_position[i] == temp_arr.size()) {
@@ -120,25 +119,20 @@ void ProcessingString::Result() {
 }
 
 void ProcessingString::BuildBor() {
-  for (int i = 0; i < temp_arr.size(); ++i) {
+  for (unsigned int i = 0; i < temp_arr.size(); ++i) {
     // добавление в бор текущий шаблон без маски
     AddInBor(i);
   }
-  for (int i = 0; i < bor.size(); ++i) {
+  for (unsigned int i = 0; i < bor.size(); ++i) {
     // проводим все суффиксные ссылки
     GetLink(i);
   }
-  for (int i = 0; i < bor.size(); ++i) {
+  for (unsigned int i = 0; i < bor.size(); ++i) {
     // проводим все краткие суффиксные ссылки
     GetUp(i);
   }
 }
 
-void ProcessingString::Implementation() {
-  BuildBor();    // построение бора
-  ProcessText(); // поиск шаблонов в строке
-  Result();      // вывод
-}
 
 void ProcessingString::InitBor() {
   bor.resize(1);
@@ -152,7 +146,7 @@ void ProcessingString::FillTempArr() {
   int count_of_temps = 0;
   bool valid_letter_appeared =
       false; // проверка на то, что мы уже прошли валижную букву
-  for (int i = 0; i < temp.size(); ++i) {
+  for (unsigned int i = 0; i < temp.size(); ++i) {
     char letter = temp[i];
     if (letter != '?') {
       // начало нового шаблона без маски
@@ -171,7 +165,7 @@ void ProcessingString::FillTempArr() {
 void ProcessingString::InitArr(int number) {
   bor[number].way.resize(size_alphabet);
   bor[number].child.resize(size_alphabet);
-  for (int i = 0; i < size_alphabet; ++i) {
+  for (unsigned int i = 0; i < size_alphabet; ++i) {
     bor[number].way[i] = -1;
     bor[number].child[i] = -1;
   }
@@ -180,7 +174,7 @@ void ProcessingString::InitArr(int number) {
 void ProcessingString::AddInBor(int number) {
   string tmp_string = temp_arr[number];
   int cur = 0;
-  for (int i = 0; i < tmp_string.size(); ++i) {
+  for (unsigned int i = 0; i < tmp_string.size(); ++i) {
     char cur_letter = tmp_string[i] - 'a'; // добавляемая буква
     // если нет ребенка у текущей вершины, то создаем новую ноду
     if (bor[cur].child[cur_letter] == -1) {
@@ -234,7 +228,7 @@ int ProcessingString::Way(int vertex, char letter) {
   return bor[vertex].way[letter];
 }
 
-const int ProcessingString::GetUp(int vertex) {
+int ProcessingString::GetUp(int vertex) {
   if (bor[vertex].up == -1) {
     int suf_parent = bor[vertex].suff_link;
     //если суффиксная ссылка - терминал, то эта же ссылка - краткая
@@ -256,6 +250,6 @@ int main() {
   string inp_str; // строка
   cin >> inp_str;
   ProcessingString my_class(std::move(inp_str), std::move(inp_template));
-  my_class.Implementation();
+  my_class.Result();
   return 0;
 }
