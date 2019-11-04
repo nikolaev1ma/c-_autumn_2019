@@ -72,8 +72,7 @@ private:
 
 ProcessingString::ProcessingString(string str_, string temp_)
     : str(std::move(str_)), temp(std::move(temp_)), temp_arr(vector<string>(1)),
-      pos_in_temp(vector<int>(1)) {
-  FillTempArr();
+      pos_in_temp(vector<int>(1)) {  FillTempArr();
   InitBor();
   count_of_temps_in_this_position.resize(str.size());
   BuildBor();    // построение бора
@@ -82,7 +81,7 @@ ProcessingString::ProcessingString(string str_, string temp_)
 
 void ProcessingString::ProcessText() {
   int cur = 0; // место, где мы находимся в bor
-  for (unsigned int i = 0; i < str.size(); ++i) {
+  for (int i = 0; i < str.size(); ++i) {
     char letter = str[i] - 'a'; // текущая обрабатываемая буква
     cur = Way(cur, letter); // продвигаемся по бору
     int search_temp = cur;
@@ -92,7 +91,7 @@ void ProcessingString::ProcessText() {
       vector<int> tmp =
           bor[search_temp].pattern_leaf_here; // массив всех шаблонов,
       // заканчивающихся в search_temp
-      for (unsigned int j = 0; j < tmp.size(); ++j) {
+      for (int j = 0; j < tmp.size(); ++j) {
         int cur_temp = tmp[j];
         int len_cur_temp =
             pos_in_temp[cur_temp]; // позиция данного шаблона без маски
@@ -107,7 +106,7 @@ void ProcessingString::ProcessText() {
 }
 
 void ProcessingString::Result() const {
-  for (unsigned int i = 0;
+  for (int i = 0;
        i < std::min(str.size(), str.size() - temp.size() + 1); ++i) {
     // если в i позиции строки начинаются все шаблоны без маски, то здесь
     // начинаются и наш шаблон
@@ -119,15 +118,15 @@ void ProcessingString::Result() const {
 }
 
 void ProcessingString::BuildBor() {
-  for (unsigned int i = 0; i < temp_arr.size(); ++i) {
+  for (int i = 0; i < temp_arr.size(); ++i) {
     // добавление в бор текущий шаблон без маски
     AddInBor(i);
   }
-  for (unsigned int i = 0; i < bor.size(); ++i) {
+  for (int i = 0; i < bor.size(); ++i) {
     // проводим все суффиксные ссылки
     GetLink(i);
   }
-  for (unsigned int i = 0; i < bor.size(); ++i) {
+  for (int i = 0; i < bor.size(); ++i) {
     // проводим все краткие суффиксные ссылки
     GetUp(i);
   }
@@ -146,7 +145,7 @@ void ProcessingString::FillTempArr() {
   int count_of_temps = 0;
   bool valid_letter_appeared =
       false; // проверка на то, что мы уже прошли валижную букву
-  for (unsigned int i = 0; i < temp.size(); ++i) {
+  for (int i = 0; i < temp.size(); ++i) {
     char letter = temp[i];
     if (letter != '?') {
       // начало нового шаблона без маски
@@ -165,7 +164,7 @@ void ProcessingString::FillTempArr() {
 void ProcessingString::InitArr(int number) {
   bor[number].way.resize(size_alphabet);
   bor[number].child.resize(size_alphabet);
-  for (unsigned int i = 0; i < size_alphabet; ++i) {
+  for (int i = 0; i < size_alphabet; ++i) {
     bor[number].way[i] = -1;
     bor[number].child[i] = -1;
   }
@@ -174,7 +173,7 @@ void ProcessingString::InitArr(int number) {
 void ProcessingString::AddInBor(int number) {
   string tmp_string = temp_arr[number];
   int cur = 0;
-  for (unsigned int i = 0; i < tmp_string.size(); ++i) {
+  for (int i = 0; i < tmp_string.size(); ++i) {
     char cur_letter = tmp_string[i] - 'a'; // добавляемая буква
     // если нет ребенка у текущей вершины, то создаем новую ноду
     if (bor[cur].child[cur_letter] == -1) {
