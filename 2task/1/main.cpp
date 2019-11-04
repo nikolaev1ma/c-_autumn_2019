@@ -16,7 +16,7 @@ class ProcessingStr {
 public:
   ProcessingStr(string str_);
 
-  int Result();
+  int Result() const;
 
 private:
   string str;
@@ -99,8 +99,8 @@ void ProcessingStr::UpdateSupportArr() {
     vector<int> count_elements_in_class(
         classes_count); // храним колво элементов в каждом классе
                         // эквивалентности
-    for (int i = 0; i < str_size; ++i) {
-      ++count_elements_in_class[equivalence_class[offset_arr[i]]];
+    for (auto element : offset_arr) {
+      ++count_elements_in_class[equivalence_class[element]];
     }
     for (int i = 1; i < classes_count; ++i) {
       count_elements_in_class[i] += count_elements_in_class[i - 1];
@@ -165,7 +165,7 @@ void ProcessingStr::ConstructLCP() {
 }
 
 // считаем количество всех уникальных подстрок
-int ProcessingStr::Result() {
+int ProcessingStr::Result() const {
   int result = 0;
   // сначала посчитаем все возможные подстроки
   for (int i = 0; i < str_size; ++i) {
