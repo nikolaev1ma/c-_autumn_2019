@@ -186,7 +186,7 @@ void ProcessingStr::SearchKStatistic() const {
         min_lcp, lcp[i]); // lCP(a, b) = min(LCP(i, i + 1)), где
                           // i пренадлежит [a ... b - 1]
                           // проверяем то, что 2 соседних суффикса в суффиксном
-                          // массиве лежат по разные стороны от '#'
+                          // массиве лежат по разные стороны от '#'.
     if ((suff_arr[i] < a_size && suff_arr[i + 1] > a_size) ||
         (suff_arr[i] > a_size && suff_arr[i + 1] < a_size)) {
       // тогда заметим, что мы обработали lcp[i] новых подстрок(в
