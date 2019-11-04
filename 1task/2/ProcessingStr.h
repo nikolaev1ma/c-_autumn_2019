@@ -17,7 +17,7 @@ using std::vector;
 class ProcessingStr {
 public:
   ProcessingStr(string str_)
-      : str(std::move(str_)), str_size(str.size()), initialized_str(true) {}
+      : str(std::move(str_)), str_size(str.size()), initialized_str(false) {}
 
   ProcessingStr(int str_size_) : str_size(str_size_) {}
 
@@ -27,13 +27,13 @@ public:
   void PutPrefix(const vector<int> &prefix_) {
     prefix = prefix_;
     str_size = prefix.size();
-    initialized_prefix = true;
+    initialized_prefix = false;
   }
 
   void PutZ(const vector<int> &z_) {
     z = z_;
     str_size = prefix.size();
-    initialized_z = true;
+    initialized_z = false;
   }
 
   //вывод

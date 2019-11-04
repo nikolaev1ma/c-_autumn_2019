@@ -31,7 +31,7 @@ private:
     }
     vector<bool> can_use_letter(
             size_alphabet); // can_use_letter[l] - может ли находиться буква
-                            // l на позиции n
+    // l на позиции n
     for (char letter = 'a'; letter <= 'z'; ++letter) {
       // изначально каждая буква может находиться на позиции n
       can_use_letter[letter - 'a'] = true;
@@ -57,10 +57,12 @@ private:
 };
 
 void ProcessingStr::GetStrFromPrefix() {
-  if (!initialized_str) {
-    initialized_str = true;
-    GetStrByPrefix auxiliary_class(
-            std::move(prefix)); // создаем вспомогательный класс
-    str = auxiliary_class.Str(); // присваиваем
+  if (initialized_str) {
+    return;
   }
+  initialized_str = true;
+  GetStrByPrefix auxiliary_class(
+          std::move(prefix)); // создаем вспомогательный класс
+  str = auxiliary_class.Str(); // присваиваем
+
 }

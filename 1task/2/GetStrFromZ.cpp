@@ -1,6 +1,6 @@
 #include "ProcessingStr.h"
 
-typedef vector<vector<bool>> vectorZT;
+typedef vector <vector<bool>> vectorZT;
 
 class GetStrByZ {
 public:
@@ -67,9 +67,11 @@ private:
 };
 
 void ProcessingStr::GetStrFromZ() {
-  if (!initialized_str) {
-    initialized_str = true;
-    GetStrByZ auxiliary_class(std::move(z)); // вспомогательный класс
-    str = auxiliary_class.Str();             // присваиваем
+  if (initialized_str) {
+    return;
   }
+  initialized_str = true;
+  GetStrByZ auxiliary_class(std::move(z)); // вспомогательный класс
+  str = auxiliary_class.Str();             // присваиваем
+
 }
