@@ -99,8 +99,8 @@ void SuffixArrayBuilder::UpdateSuffixArray() {
     vector<int> count_elements_in_class(
         classes_count); // храним колво элементов в каждом классе
     // эквивалентности
-    for (auto element : offset_arr) {
-      ++count_elements_in_class[equivalence_class[element]];
+    for (auto element : equivalence_class) {
+      ++count_elements_in_class[element];
     }
     for (int i = 1; i < classes_count; ++i) {
       count_elements_in_class[i] += count_elements_in_class[i - 1];
