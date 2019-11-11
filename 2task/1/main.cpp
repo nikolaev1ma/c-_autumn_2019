@@ -16,7 +16,6 @@ class SuffixArrayBuilder {
 public:
   explicit SuffixArrayBuilder(string str_);
 
-
   vector<int> LCP() const;
 
 private:
@@ -39,9 +38,9 @@ private:
 };
 
 SuffixArrayBuilder::SuffixArrayBuilder(string str_)
-        : str(std::move(str_) + '$'), str_size(str.size()), classes_count(0),
-          suff_arr(vector<int>(str_size)), equivalence_class(vector<int>(str_size)),
-          reverse_suff_arr(vector<int>(str_size)), lcp(vector<int>(str_size)) {
+    : str(std::move(str_) + '$'), str_size(str.size()), classes_count(0),
+      suff_arr(vector<int>(str_size)), equivalence_class(vector<int>(str_size)),
+      reverse_suff_arr(vector<int>(str_size)), lcp(vector<int>(str_size)) {
   InitSuffixArray(); // строим начальный вспомогательный суффиксный
   // массив
   UpdateSuffixArray(); // строим суффиксный массив рекуррентно
@@ -52,7 +51,7 @@ SuffixArrayBuilder::SuffixArrayBuilder(string str_)
 // будем использовать сортировку подсчетом
 void SuffixArrayBuilder::InitSuffixArray() {
   vector<int> letter_count(
-          size_alphabet); // колво использования каждой букве в слове
+      size_alphabet); // колво использования каждой букве в слове
   for (const auto letter : str) {
     if (letter != '$') {
       ++letter_count[letter - 'a'];
@@ -87,7 +86,7 @@ void SuffixArrayBuilder::UpdateSuffixArray() {
   // str_size
   for (int degree = 0; (1 << degree) < str_size; ++degree) {
     vector<int> offset_arr(
-            str_size); // сдвинутый по модулю суффиксный массив на 2 ^ k - 1
+        str_size); // сдвинутый по модулю суффиксный массив на 2 ^ k - 1
     for (int i = 0; i < str_size; ++i) {
       offset_arr[i] = suff_arr[i] - (1 << degree);
       if (offset_arr[i] < 0) {
@@ -98,7 +97,7 @@ void SuffixArrayBuilder::UpdateSuffixArray() {
     // то теперь сортировка зависит только от следующих 2 ^ (k - 1) элементов,
     // тоесть от сортирвки массива offset
     vector<int> count_elements_in_class(
-            classes_count); // храним колво элементов в каждом классе
+        classes_count); // храним колво элементов в каждом классе
     // эквивалентности
     for (auto element : offset_arr) {
       ++count_elements_in_class[equivalence_class[element]];
@@ -162,14 +161,11 @@ void SuffixArrayBuilder::ConstructLCP() {
       ++shift;
     }
     lcp[reverse_suff_arr[i]] = shift;
-
   }
 }
 
 // возвращает lcp
-vector<int> SuffixArrayBuilder::LCP() const {
-  return lcp;
-}
+vector<int> SuffixArrayBuilder::LCP() const { return lcp; }
 
 // считаем количество всех уникальных подстрок
 int64_t NumberOfUniqueSubstrings(const SuffixArrayBuilder &c) {
