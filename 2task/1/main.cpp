@@ -12,47 +12,48 @@ using std::vector;
 
 int const size_alphabet = 26;
 
-class SuffixArrayBuilder {
+class SuffixArrayAndLcpBuilder {
 public:
-  explicit SuffixArrayBuilder(string str_);
+  explicit SuffixArrayAndLcpBuilder(string str_);
 
-  vector<int> LCP() const;
+  ~SuffixArrayAndLcpBuilder();
+
+  const vector<int> &LCP() const;
 
 private:
-  string str;
-  int str_size;
-  int classes_count; // колво классов эквивалентности
-  vector<int> suff_arr; // суффиксный массив
-  vector<int> reverse_suff_arr; // обратный к суффиксному массиву
-  vector<int> equivalence_class; // массив классов эквивалентности
-  vector<int> lcp;
+  const string str_;
+  const int str_size_;
+  vector<int> suff_arr_; // суффиксный массив
+  vector<int> lcp_;
 
-  void InitSuffixArray(); // построение суффиксного массива для
+  vector<int> InitSuffixArray(); // построение суффиксного массива для
   // подстрок длины 1
 
-  void UpdateSuffixArray(); // построение суффиксного массива
+  void UpdateSuffixArray(
+      vector<int> equivalence_class); // построение суффиксного массива
 
-  void ConstructLCP(); // построение lcp
+  void ConstructLCP(); // построение lcp_
 
-  void ConstructReverseArr(); // построение обратного суффиксного массива
+  vector<int>
+  ConstructReverseArr() const; // построение обратного суффиксного массива
 };
 
-SuffixArrayBuilder::SuffixArrayBuilder(string str_)
-    : str(std::move(str_) + '$'), str_size(str.size()), classes_count(0),
-      suff_arr(vector<int>(str_size)), equivalence_class(vector<int>(str_size)),
-      reverse_suff_arr(vector<int>(str_size)), lcp(vector<int>(str_size)) {
-  InitSuffixArray(); // строим начальный вспомогательный суффиксный
+SuffixArrayAndLcpBuilder::SuffixArrayAndLcpBuilder(string str)
+    : str_(std::move(str) + '$'), str_size_(str_.size()),
+      suff_arr_(vector<int>(str_size_)), lcp_(vector<int>(str_size_)) {
+  const vector<int> equivalence_class =
+      InitSuffixArray(); // строим начальный вспомогательный суффиксный
   // массив
-  UpdateSuffixArray(); // строим суффиксный массив рекуррентно
-  ConstructLCP(); // строим lcp
+  UpdateSuffixArray(equivalence_class); // строим суффиксный массив рекуррентно
+  ConstructLCP(); // строим lcp_
 }
 
 // должны по сути отсортировать буквы в массиве
 // будем использовать сортировку подсчетом
-void SuffixArrayBuilder::InitSuffixArray() {
+vector<int> SuffixArrayAndLcpBuilder::InitSuffixArray() {
   vector<int> letter_count(
       size_alphabet); // колво использования каждой букве в слове
-  for (const auto letter : str) {
+  for (const auto letter : str_) {
     if (letter != '$') {
       ++letter_count[letter - 'a'];
     }
@@ -60,65 +61,74 @@ void SuffixArrayBuilder::InitSuffixArray() {
   for (int i = 1; i < size_alphabet; ++i) {
     letter_count[i] += letter_count[i - 1];
   }
-  suff_arr[0] = str_size - 1; // тк самый большой приортет у '$'
+  suff_arr_[0] = str_size_ - 1; // тк самый большой приортет у '$'
   // проходимся по строке, увеличивая приортет этой
   // же буквы двигаясь ближе к началу слова
-  for (int i = str_size - 2; i >= 0; --i) {
-    --letter_count[str[i] - 'a'];
-    suff_arr[letter_count[str[i] - 'a'] + 1] = i;
+  for (int i = str_size_ - 2; i >= 0; --i) {
+    --letter_count[str_[i] - 'a'];
+    suff_arr_[letter_count[str_[i] - 'a'] + 1] = i;
   }
-  // теперь и востановили начальный suff_arr
-  equivalence_class[str_size - 1] = 0; // тк '$' имеет самый бльшой приоритет
-  classes_count = 1;
-  for (int i = 1; i < str_size; ++i) {
+  // теперь и востановили начальный suff_arr_
+  vector<int> equivalence_class(str_size_);
+  int classes_count = 1;
+  equivalence_class[str_size_ - 1] = 0; // тк '$' имеет самый бльшой приоритет
+  for (int i = 1; i < str_size_; ++i) {
     // условие того, что начинается новый класс эквивалентности
-    if (str[suff_arr[i]] != str[suff_arr[i - 1]]) {
+    if (str_[suff_arr_[i]] != str_[suff_arr_[i - 1]]) {
       ++classes_count;
     }
-    equivalence_class[suff_arr[i]] = classes_count - 1;
+    equivalence_class[suff_arr_[i]] = classes_count - 1;
   }
+  return equivalence_class;
 }
 
 // Должны отсортировать циклические подстроки длины 2 ^ k опираясь на сортировку
 // циклических подстрок длины 2 ^ (k - 1)
-void SuffixArrayBuilder::UpdateSuffixArray() {
+void SuffixArrayAndLcpBuilder::UpdateSuffixArray(
+    vector<int> equivalence_class) {
   // будем сортировать по степеням двойки, пока длина подстроки не привысит
-  // str_size
-  for (int degree = 0; (1 << degree) < str_size; ++degree) {
+  // str_size_
+  int classes_count = 0;
+  for (const auto element : equivalence_class) {
+    classes_count = std::max(classes_count, element);
+  }
+  ++classes_count;
+  for (int degree = 0; (1 << degree) < str_size_; ++degree) {
     vector<int> offset_arr(
-        str_size); // сдвинутый по модулю суффиксный массив на 2 ^ k - 1
-    for (int i = 0; i < str_size; ++i) {
-      offset_arr[i] = suff_arr[i] - (1 << degree);
+        str_size_); // сдвинутый по модулю суффиксный массив на 2 ^ k - 1
+    for (int i = 0; i < str_size_; ++i) {
+      offset_arr[i] = suff_arr_[i] - (1 << degree);
       if (offset_arr[i] < 0) {
-        offset_arr[i] += str_size;
+        offset_arr[i] += str_size_;
       }
     }
-    // тк suff_arr уже отсортирован по первым 2 ^ (k - 1) элементам,
+    // тк suff_arr_ уже отсортирован по первым 2 ^ (k - 1) элементам,
     // то теперь сортировка зависит только от следующих 2 ^ (k - 1) элементов,
     // тоесть от сортирвки массива offset
+
     vector<int> count_elements_in_class(
         classes_count); // храним колво элементов в каждом классе
     // эквивалентности
-    for (auto element : equivalence_class) {
+    for (const auto element : equivalence_class) {
       ++count_elements_in_class[element];
     }
     for (int i = 1; i < classes_count; ++i) {
       count_elements_in_class[i] += count_elements_in_class[i - 1];
     }
-    for (int i = str_size - 1; i >= 0; --i) {
+    for (int i = str_size_ - 1; i >= 0; --i) {
       const int tmp = offset_arr[i];
       --count_elements_in_class[equivalence_class[tmp]];
-      suff_arr[count_elements_in_class[equivalence_class[tmp]]] = tmp;
+      suff_arr_[count_elements_in_class[equivalence_class[tmp]]] = tmp;
     }
     // теперь восстанавливаем массив классов эквивалетности
-    vector<int> tmp_equivalence_class(str_size);
-    tmp_equivalence_class[suff_arr[0]] = 0;
+    vector<int> tmp_equivalence_class(str_size_);
+    tmp_equivalence_class[suff_arr_[0]] = 0;
     classes_count = 1;
-    for (int i = 1; i < str_size; ++i) {
-      int first_begin = suff_arr[i];
-      int second_begin = suff_arr[i - 1];
-      int first_end = (suff_arr[i] + (1 << degree)) % str_size;
-      int second_end = (suff_arr[i - 1] + (1 << degree)) % str_size;
+    for (int i = 1; i < str_size_; ++i) {
+      const int first_begin = suff_arr_[i];
+      const int second_begin = suff_arr_[i - 1];
+      const int first_end = (suff_arr_[i] + (1 << degree)) % str_size_;
+      const int second_end = (suff_arr_[i - 1] + (1 << degree)) % str_size_;
       // число классов увеличивается только при условии, что соседние строки не
       // совпадают, тоесть что текущее значение и сдвинутое на 2 ^ (k - 1) в
       // предыдущем классе эквивалентности различны
@@ -126,65 +136,72 @@ void SuffixArrayBuilder::UpdateSuffixArray() {
           equivalence_class[first_end] != equivalence_class[second_end]) {
         ++classes_count;
       }
-      tmp_equivalence_class[suff_arr[i]] = classes_count - 1;
+      tmp_equivalence_class[suff_arr_[i]] = classes_count - 1;
     }
     equivalence_class = std::move(tmp_equivalence_class);
   }
 }
 
 // разворачиваем суффиксный массив
-void SuffixArrayBuilder::ConstructReverseArr() {
-  for (int i = 0; i < str_size; ++i) {
-    reverse_suff_arr[suff_arr[i]] = i;
+vector<int> SuffixArrayAndLcpBuilder::ConstructReverseArr() const {
+  vector<int> reverse_suff_arr_(str_size_);
+  for (int i = 0; i < str_size_; ++i) {
+    reverse_suff_arr_[suff_arr_[i]] = i;
   }
+  return reverse_suff_arr_;
 }
 
-// построение lcp
-void SuffixArrayBuilder::ConstructLCP() {
-  ConstructReverseArr();
+// построение lcp_
+void SuffixArrayAndLcpBuilder::ConstructLCP() {
+  const vector<int> reverse_suff_arr_ = ConstructReverseArr();
   int shift = 0;
-  lcp[str_size - 1] = -1; // тк у него нет следующего за ним идущего
-  for (int i = 0; i < str_size; ++i) {
-    if (reverse_suff_arr[i] == str_size - 1) {
+  lcp_[str_size_ - 1] = -1; // тк у него нет следующего за ним идущего
+  for (int i = 0; i < str_size_; ++i) {
+    if (reverse_suff_arr_[i] == str_size_ - 1) {
       shift = 0;
       continue;
     }
     if (shift >= 1) {
       --shift;
     }
-    // если lcp[reverse_suff_arr[i]] > 1, то lcp[reverse_suff_arr[i]] - 1 <=
-    // lcp[reverse_suff_arr[i + 1]] пользуемся этим для вычисления следующего
-    // lcp, храня shift
-    int next = suff_arr[reverse_suff_arr[i] + 1];
-    while (std::max(next, i) + shift < str_size &&
-           str[next + shift] == str[i + shift]) {
+    // если lcp_[reverse_suff_arr_[i]] > 1, то lcp_[reverse_suff_arr_[i]] - 1 <=
+    // lcp_[reverse_suff_arr_[i + 1]] пользуемся этим для вычисления следующего
+    // lcp_, храня shift
+    const int next = suff_arr_[reverse_suff_arr_[i] + 1];
+    while (std::max(next, i) + shift < str_size_ &&
+           str_[next + shift] == str_[i + shift]) {
       ++shift;
     }
-    lcp[reverse_suff_arr[i]] = shift;
+    lcp_[reverse_suff_arr_[i]] = shift;
   }
 }
 
-// возвращает lcp
-vector<int> SuffixArrayBuilder::LCP() const { return lcp; }
+// возвращает lcp_
+const vector<int> &SuffixArrayAndLcpBuilder::LCP() const { return lcp_; }
 
 // считаем количество всех уникальных подстрок
-int64_t NumberOfUniqueSubstrings(const SuffixArrayBuilder &c) {
-  int str_size = c.LCP().size();
-  int result = 0;
+int64_t NumberOfUniqueSubstrings(const SuffixArrayAndLcpBuilder &c) {
+  const int str_size_ = c.LCP().size();
+  int64_t result = 0;
   // сначала посчитаем все возможные подстроки
-  result = str_size * (str_size - 1) / 2;
+  result = str_size_ * (str_size_ - 1) / 2;
   // заметим, что в у i суффикса и у i + 1 суффикса в суффиксном массиве дважды
-  // посчитано lcp[i] идентичных префиксов этих суффиксов. Поэтому вычитае все
-  // lcp[i] из текущего результата
-  for (int i = 0; i < str_size - 1; ++i) {
+  // посчитано lcp_[i] идентичных префиксов этих суффиксов. Поэтому вычитае все
+  // lcp_[i] из текущего результата
+  for (int i = 0; i < str_size_ - 1; ++i) {
     result -= c.LCP()[i];
   }
   return result;
 }
 
+SuffixArrayAndLcpBuilder::~SuffixArrayAndLcpBuilder() {
+  lcp_.clear();
+  suff_arr_.clear();
+}
+
 int main() {
   string input_string;
   cin >> input_string;
-  SuffixArrayBuilder my_class(std::move(input_string));
+  SuffixArrayAndLcpBuilder my_class(std::move(input_string));
   cout << NumberOfUniqueSubstrings(my_class) << '\n';
 }
