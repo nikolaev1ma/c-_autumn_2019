@@ -89,8 +89,8 @@ void SuffixArrayAndLcpBuilder::UpdateSuffixArray(
   // будем сортировать по степеням двойки, пока длина подстроки не привысит
   // str_size_
   int classes_count = 0;
-  for (const auto element : equivalence_class) {
-    classes_count = std::max(classes_count, element);
+  for (const auto class_ : equivalence_class) {
+    classes_count = std::max(classes_count, class_);
   }
   ++classes_count;
   for (int degree = 0; (1 << degree) < str_size_; ++degree) {
