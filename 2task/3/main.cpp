@@ -30,7 +30,7 @@ private:
   // подстрок длины 1
 
   void UpdateSuffixArray(
-          vector<int64_t> equivalence_class); // построение суффиксного массива
+      vector<int64_t> equivalence_class); // построение суффиксного массива
 
   void ConstructLCP(); // построение lcp_
 
@@ -38,13 +38,13 @@ private:
   ConstructReverseArr() const; // построение обратного суффиксного массива
 };
 
-SuffixArrayAndLcpBuilder::SuffixArrayAndLcpBuilder(string a, string b, int64_t a_size)
+SuffixArrayAndLcpBuilder::SuffixArrayAndLcpBuilder(string a, string b,
+                                                   int64_t a_size)
     : a_size_(a_size), str_(std::move(a) + '$' + std::move(b) + '#'),
-      str_size_(str_.size()),
-      suff_arr_(vector<int64_t>(str_size_)),
+      str_size_(str_.size()), suff_arr_(vector<int64_t>(str_size_)),
       lcp_(vector<int64_t>(str_size_)) {
   const vector<int64_t> equivalence_class =
-          InitSuffixArray(); // строим начальный вспомогательный суффиксный
+      InitSuffixArray(); // строим начальный вспомогательный суффиксный
   // массив
   UpdateSuffixArray(equivalence_class); // строим суффиксный массив рекуррентно
   ConstructLCP(); // строим lcp_
@@ -91,7 +91,8 @@ vector<int64_t> SuffixArrayAndLcpBuilder::InitSuffixArray() {
 
 // Должны отсортировать циклические подстроки длины 2 ^ k опираясь на сортировку
 // циклических подстрок длины 2 ^ (k - 1)
-void SuffixArrayAndLcpBuilder::UpdateSuffixArray(vector<int64_t> equivalence_class) {
+void SuffixArrayAndLcpBuilder::UpdateSuffixArray(
+    vector<int64_t> equivalence_class) {
   // будем сортировать по степеням двойки, пока длина подстроки не привысит
   // str_size
   int64_t classes_count = 0;
