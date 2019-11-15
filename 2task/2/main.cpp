@@ -72,20 +72,18 @@ class SuffixTree {
 public:
   static SuffixTree CompletedSuffixTree(string a, string b);
 
-  string DescriptionSuffixTree();
+  string Description();
 
 private:
   int vertex_count_;           // колво вершин
-  string str_;                 // объеденение 2 строк
-  int a_str_size_;             // длина 1 строки
-  int str_size_;               // длина объедениения строк
+  const string str_;           // объеденение 2 строк
+  const int a_str_size_;       // длина 1 строки
+  const int str_size_;         // длина объедениения строк
   InternalVertex current_pos_; // текущая вершина
   vector<Node> node_arr_;      // массив вершин графа
 
   vector<int> dfs_sort_; // порядок обхода вершин в графе при финальном dfs
   int dfs_counter_;      // счетчик к поличеству вершин
-  std::stringstream tmp_result_str_; // строка в которую будет записываться
-                                     // информация о ребрах
 
   SuffixTree(string a,
              string b); // храним длину строки а, чтобы могли через mode
@@ -104,14 +102,14 @@ private:
 
   int Share(InternalVertex pos); // разделяем при надобности ветки из position
 
-  void DFS(int dfs_counter_); // проход по вершинам дерева для вывода
+  void DFS(int dfs_point,
+           string &tmp_result_str); // проход по вершинам дерева для вывода
 };
 
 SuffixTree::SuffixTree(string a, string b)
     : a_str_size_(a.size()), str_(a + move(b)), str_size_(str_.size()),
-      current_pos_(InternalVertex(0, 0)), vertex_count_(1), dfs_counter_(0) {
-  node_arr_.emplace_back();
-}
+      current_pos_(InternalVertex(0, 0)), vertex_count_(1), dfs_counter_(0),
+      node_arr_(vector<Node>(1)) {}
 
 void SuffixTree::BuildTree() {
   // строим дерево для каждого префикса строки последовательно
@@ -124,53 +122,58 @@ void SuffixTree::BuildTree() {
 // дерева. Таким образом у нас получается дерево в котором содержутся только
 // суффиксы отдельно строки a и строки b. склеиных строк не будет, тк мы
 // обрезаем конец ветки, как толко находим '$'
-string SuffixTree::DescriptionSuffixTree() {
+string SuffixTree::Description() {
   dfs_sort_.resize(vertex_count_);
-  DFS(0); // dfs из вершины дерева
-  string result;
+  string tmp_result_str;
+  DFS(0, tmp_result_str); // dfs из вершины дерева
+
   std::stringstream ver_count_str;
   ver_count_str
       << dfs_counter_ + 1
       << '\n'; // заметим, что dfs_counter_ + 1 это и есть колво вершин
   // в нашем дереве
-  result = ver_count_str.str() + tmp_result_str_.str(); // объяденяем два вывода
+  const string result =
+      ver_count_str.str() + tmp_result_str; // объяденяем два вывода
   return result;
 }
 
 // записываем информацию по поводу вершины по индексу dfs_point и продолжаем dfs
 // при необходимости
-void SuffixTree::DFS(int dfs_point) {
-  const Node vertex = node_arr_[dfs_point];
+void SuffixTree::DFS(int dfs_point, string &tmp_result_str) {
+  const auto vertex = node_arr_[dfs_point];
   for (int i = 0; i < size_alphabet + 2; ++i) {
     // проходимся по детям
-    if (vertex.child[i] != -1) {
-      ++dfs_counter_;
-      dfs_sort_[vertex.child[i]] =
-          dfs_counter_; // добавляем в отсортированный массив node
-      Node child_vertex = node_arr_[vertex.child[i]]; // ребенок
-      child_vertex.parent = dfs_sort_[child_vertex.parent]; // меняем родителя
-      bool reach_$ = child_vertex.left_border_edge < a_str_size_ &&
-                     child_vertex.right_border_edge >=
-                         a_str_size_; // флаг того, что мы дошли до $
-      if (reach_$) {
-        // обрезаем
-        child_vertex.right_border_edge = a_str_size_;
-        child_vertex.str_number = 0;
-      }
-      // проверка на то, что ребро из слова b
-      if (child_vertex.left_border_edge >= a_str_size_) {
-        child_vertex.left_border_edge -= a_str_size_;
-        child_vertex.right_border_edge -= a_str_size_;
-        child_vertex.str_number = 1;
-      }
-      // запись информации
-      tmp_result_str_ << child_vertex.parent << " " << child_vertex.str_number
-                      << " " << child_vertex.left_border_edge << " "
-                      << child_vertex.right_border_edge << '\n';
-      if (!reach_$) {
-        // продолжаем dfs
-        DFS(vertex.child[i]);
-      }
+    if (vertex.child[i] == -1) {
+      continue;
+    }
+    ++dfs_counter_;
+    dfs_sort_[vertex.child[i]] =
+        dfs_counter_; // добавляем в отсортированный массив node
+    Node child_vertex = node_arr_[vertex.child[i]]; // ребенок
+    child_vertex.parent = dfs_sort_[child_vertex.parent]; // меняем родителя
+    const bool reach_$ = child_vertex.left_border_edge < a_str_size_ &&
+                         child_vertex.right_border_edge >=
+                             a_str_size_; // флаг того, что мы дошли до $
+    if (reach_$) {
+      // обрезаем
+      child_vertex.right_border_edge = a_str_size_;
+      child_vertex.str_number = 0;
+    }
+    // проверка на то, что ребро из слова b
+    if (child_vertex.left_border_edge >= a_str_size_) {
+      child_vertex.left_border_edge -= a_str_size_;
+      child_vertex.right_border_edge -= a_str_size_;
+      child_vertex.str_number = 1;
+    }
+    // запись информации
+    std::stringstream description_node;
+    description_node << child_vertex.parent << " " << child_vertex.str_number
+                     << " " << child_vertex.left_border_edge << " "
+                     << child_vertex.right_border_edge << '\n';
+    tmp_result_str += description_node.str();
+    if (!reach_$) {
+      // продолжаем dfs
+      DFS(vertex.child[i], tmp_result_str);
     }
   }
 }
@@ -212,7 +215,7 @@ int SuffixTree::Share(InternalVertex position) {
   if (pos_in_edge == 0) {
     return node_arr_[vertex].parent;
   }
-  Node basic_node = node_arr_[vertex];
+  const auto basic_node = node_arr_[vertex];
   ++vertex_count_;
   node_arr_.emplace_back(basic_node.parent, basic_node.left_border_edge,
                          basic_node.left_border_edge +
@@ -280,16 +283,16 @@ int SuffixTree::SuffLink(int vertex) {
   } else {
     // переходим в суффиксную ссылку отца, а потом спускаемся на то же ребро,
     // что и поднялись до отца и создаем еще одну вершину при необходимости
-    InternalVertex iv =
+    const auto iv =
         InternalVertex(parent_link, node_arr_[parent_link].LenEdge());
-    InternalVertex p = Go(iv, node_arr_[vertex].left_border_edge,
-                          node_arr_[vertex].right_border_edge);
+    const auto p = Go(iv, node_arr_[vertex].left_border_edge,
+                      node_arr_[vertex].right_border_edge);
     return node_arr_[vertex].link = Share(p);
   }
 }
 
 SuffixTree SuffixTree::CompletedSuffixTree(string a, string b) {
-  SuffixTree new_suffix_tree = SuffixTree(a, b);
+  auto new_suffix_tree = SuffixTree(a, b);
   new_suffix_tree.BuildTree();
   return new_suffix_tree;
 }
@@ -298,9 +301,7 @@ int main() {
   string str_a;
   string str_b;
   cin >> str_a >> str_b;
-  int a_size = str_a.size();
-  SuffixTree my_class =
-      move(SuffixTree::CompletedSuffixTree(move(str_a), move(str_b)));
-  const auto result = my_class.DescriptionSuffixTree();
+  auto my_class = SuffixTree::CompletedSuffixTree(move(str_a), move(str_b));
+  const auto result = my_class.Description();
   cout << result;
 }
