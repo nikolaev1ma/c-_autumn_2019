@@ -43,10 +43,11 @@ SuffixArrayAndLcpBuilder::SuffixArrayAndLcpBuilder(string a, string b,
     : a_size_(a_size), str_(std::move(a) + '$' + std::move(b) + '#'),
       str_size_(str_.size()), suff_arr_(vector<int64_t>(str_size_)),
       lcp_(vector<int64_t>(str_size_)) {
-  const vector<int64_t> equivalence_class =
+  const auto equivalence_class =
       InitSuffixArray(); // строим начальный вспомогательный суффиксный
   // массив
-  UpdateSuffixArray(equivalence_class); // строим суффиксный массив рекуррентно
+  UpdateSuffixArray(
+      std::move(equivalence_class)); // строим суффиксный массив рекуррентно
   ConstructLCP(); // строим lcp_
 }
 
@@ -115,8 +116,8 @@ void SuffixArrayAndLcpBuilder::UpdateSuffixArray(
     vector<int64_t> count_elements_in_class(
         classes_count); // храним колво элементов в каждом классе
     // эквивалентности
-    for (const auto i : equivalence_class) {
-      ++count_elements_in_class[i];
+    for (const auto element : offset_arr) {
+      ++count_elements_in_class[equivalence_class[element]];
     }
     for (int64_t i = 1; i < classes_count; ++i) {
       count_elements_in_class[i] += count_elements_in_class[i - 1];
@@ -159,7 +160,7 @@ vector<int64_t> SuffixArrayAndLcpBuilder::ConstructReverseArr() const {
 
 // построение lcp
 void SuffixArrayAndLcpBuilder::ConstructLCP() {
-  const vector<int64_t> reverse_suff_arr = ConstructReverseArr();
+  const auto reverse_suff_arr = ConstructReverseArr();
   int64_t shift = 0;
   lcp_[str_size_ - 1] = -1; // тк у него нет следующего за ним идущего
   for (int64_t i = 0; i < str_size_; ++i) {
@@ -228,6 +229,7 @@ int main() {
   cin >> k;
   int64_t a_size = str_a.size(); // передаем в качестве аргумента, чтобы можно
   // было строки передать c помощью move
-  SuffixArrayAndLcpBuilder my_class(std::move(str_a), std::move(str_b), a_size);
+  const SuffixArrayAndLcpBuilder my_class(std::move(str_a), std::move(str_b),
+                                          a_size);
   my_class.SearchKStatistic(k);
 }
