@@ -72,7 +72,7 @@ class SuffixTree {
 public:
   static SuffixTree CompletedSuffixTree(string a, string b);
 
-  string Description();
+  string Description() const ;
 
 private:
   int vertex_count_;           // колво вершин
@@ -81,9 +81,6 @@ private:
   const int str_size_;         // длина объедениения строк
   InternalVertex current_pos_; // текущая вершина
   vector<Node> node_arr_;      // массив вершин графа
-
-  vector<int> dfs_sort_; // порядок обхода вершин в графе при финальном dfs
-  int dfs_counter_;      // счетчик к поличеству вершин
 
   SuffixTree(string a,
              string b); // храним длину строки а, чтобы могли через mode
@@ -103,13 +100,13 @@ private:
   int Share(InternalVertex pos); // разделяем при надобности ветки из position
 
   void DFS(int dfs_point,
-           string &tmp_result_str); // проход по вершинам дерева для вывода
+           string &tmp_result_str, vector<int>& dfs_sort, int& dfs_counter) const ; // проход по вершинам дерева для вывода
 };
 
 SuffixTree::SuffixTree(string a, string b)
     : a_str_size_(a.size()), str_(a + move(b)), str_size_(str_.size()),
-      current_pos_(InternalVertex(0, 0)), vertex_count_(1), dfs_counter_(0),
-      node_arr_(vector<Node>(1)) {}
+      current_pos_(InternalVertex(0, 0)), vertex_count_(1),
+      node_arr_(1) {}
 
 void SuffixTree::BuildTree() {
   // строим дерево для каждого префикса строки последовательно
@@ -122,15 +119,16 @@ void SuffixTree::BuildTree() {
 // дерева. Таким образом у нас получается дерево в котором содержутся только
 // суффиксы отдельно строки a и строки b. склеиных строк не будет, тк мы
 // обрезаем конец ветки, как толко находим '$'
-string SuffixTree::Description() {
-  dfs_sort_.resize(vertex_count_);
+string SuffixTree::Description() const {
+  vector<int> dfs_sort(vertex_count_);
+  int dfs_counter = 0;
   string tmp_result_str;
-  DFS(0, tmp_result_str); // dfs из вершины дерева
+  DFS(0, tmp_result_str, dfs_sort, dfs_counter); // dfs из вершины дерева
 
   std::stringstream ver_count_str;
   ver_count_str
-      << dfs_counter_ + 1
-      << '\n'; // заметим, что dfs_counter_ + 1 это и есть колво вершин
+      << dfs_counter + 1
+      << '\n'; // заметим, что dfs_counter + 1 это и есть колво вершин
   // в нашем дереве
   const string result =
       ver_count_str.str() + tmp_result_str; // объяденяем два вывода
@@ -139,18 +137,18 @@ string SuffixTree::Description() {
 
 // записываем информацию по поводу вершины по индексу dfs_point и продолжаем dfs
 // при необходимости
-void SuffixTree::DFS(int dfs_point, string &tmp_result_str) {
+void SuffixTree::DFS(int dfs_point, string &tmp_result_str, vector<int>& dfs_sort, int& dfs_counter) const {
   const auto vertex = node_arr_[dfs_point];
   for (int i = 0; i < size_alphabet + 2; ++i) {
     // проходимся по детям
     if (vertex.child[i] == -1) {
       continue;
     }
-    ++dfs_counter_;
-    dfs_sort_[vertex.child[i]] =
-        dfs_counter_; // добавляем в отсортированный массив node
+    ++dfs_counter;
+    dfs_sort[vertex.child[i]] =
+        dfs_counter; // добавляем в отсортированный массив node
     Node child_vertex = node_arr_[vertex.child[i]]; // ребенок
-    child_vertex.parent = dfs_sort_[child_vertex.parent]; // меняем родителя
+    child_vertex.parent = dfs_sort[child_vertex.parent]; // меняем родителя
     const bool reach_$ = child_vertex.left_border_edge < a_str_size_ &&
                          child_vertex.right_border_edge >=
                              a_str_size_; // флаг того, что мы дошли до $
@@ -173,7 +171,7 @@ void SuffixTree::DFS(int dfs_point, string &tmp_result_str) {
     tmp_result_str += description_node.str();
     if (!reach_$) {
       // продолжаем dfs
-      DFS(vertex.child[i], tmp_result_str);
+      DFS(vertex.child[i], tmp_result_str, dfs_sort, dfs_counter);
     }
   }
 }
@@ -301,7 +299,7 @@ int main() {
   string str_a;
   string str_b;
   cin >> str_a >> str_b;
-  auto my_class = SuffixTree::CompletedSuffixTree(move(str_a), move(str_b));
+  const auto my_class = SuffixTree::CompletedSuffixTree(move(str_a), move(str_b));
   const auto result = my_class.Description();
   cout << result;
 }
