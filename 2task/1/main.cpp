@@ -16,8 +16,6 @@ class SuffixArrayAndLcpBuilder {
 public:
   explicit SuffixArrayAndLcpBuilder(string str_);
 
-  ~SuffixArrayAndLcpBuilder();
-
   const vector<int> &LCP() const;
 
 private:
@@ -41,10 +39,11 @@ private:
 SuffixArrayAndLcpBuilder::SuffixArrayAndLcpBuilder(string str)
     : str_(std::move(str) + '$'), str_size_(str_.size()),
       suff_arr_(vector<int>(str_size_)), lcp_(vector<int>(str_size_)) {
-  const vector<int> equivalence_class =
+  const auto equivalence_class =
       InitSuffixArray(); // строим начальный вспомогательный суффиксный
   // массив
-  UpdateSuffixArray(equivalence_class); // строим суффиксный массив рекуррентно
+  UpdateSuffixArray(
+      std::move(equivalence_class)); // строим суффиксный массив рекуррентно
   ConstructLCP(); // строим lcp_
 }
 
@@ -109,8 +108,8 @@ void SuffixArrayAndLcpBuilder::UpdateSuffixArray(
     vector<int> count_elements_in_class(
         classes_count); // храним колво элементов в каждом классе
     // эквивалентности
-    for (const auto element : equivalence_class) {
-      ++count_elements_in_class[element];
+    for (const auto element : offset_arr) {
+      ++count_elements_in_class[equivalence_class[element]];
     }
     for (int i = 1; i < classes_count; ++i) {
       count_elements_in_class[i] += count_elements_in_class[i - 1];
@@ -153,7 +152,7 @@ vector<int> SuffixArrayAndLcpBuilder::ConstructReverseArr() const {
 
 // построение lcp_
 void SuffixArrayAndLcpBuilder::ConstructLCP() {
-  const vector<int> reverse_suff_arr_ = ConstructReverseArr();
+  const auto reverse_suff_arr_ = ConstructReverseArr();
   int shift = 0;
   lcp_[str_size_ - 1] = -1; // тк у него нет следующего за ним идущего
   for (int i = 0; i < str_size_; ++i) {
@@ -194,14 +193,9 @@ int64_t NumberOfUniqueSubstrings(const SuffixArrayAndLcpBuilder &c) {
   return result;
 }
 
-SuffixArrayAndLcpBuilder::~SuffixArrayAndLcpBuilder() {
-  lcp_.clear();
-  suff_arr_.clear();
-}
-
 int main() {
   string input_string;
   cin >> input_string;
-  SuffixArrayAndLcpBuilder my_class(std::move(input_string));
+  const SuffixArrayAndLcpBuilder my_class(std::move(input_string));
   cout << NumberOfUniqueSubstrings(my_class) << '\n';
 }
