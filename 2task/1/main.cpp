@@ -37,9 +37,9 @@ private:
 };
 
 SuffixArrayAndLcpBuilder::SuffixArrayAndLcpBuilder(string str)
-    : str_(std::move(str) + '$'), str_size_(str_.size()),
-      suff_arr_(vector<int>(str_size_)), lcp_(vector<int>(str_size_)) {
-  const auto equivalence_class =
+    : str_(std::move(str) + '$'), str_size_(str_.size()), suff_arr_(str_size_),
+      lcp_(str_size_) {
+  auto equivalence_class =
       InitSuffixArray(); // строим начальный вспомогательный суффиксный
   // массив
   UpdateSuffixArray(
@@ -93,8 +93,8 @@ void SuffixArrayAndLcpBuilder::UpdateSuffixArray(
   }
   ++classes_count;
   for (int degree = 0; (1 << degree) < str_size_; ++degree) {
-    vector<int> offset_arr(
-        str_size_); // сдвинутый по модулю суффиксный массив на 2 ^ k - 1
+    // сдвинутый по модулю суффиксный массив на 2 ^ k - 1
+    vector<int> offset_arr(str_size_);
     for (int i = 0; i < str_size_; ++i) {
       offset_arr[i] = suff_arr_[i] - (1 << degree);
       if (offset_arr[i] < 0) {
