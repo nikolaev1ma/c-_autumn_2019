@@ -1,18 +1,19 @@
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <limits>
-#include <math.h>
+#include <vector>
 
 using std::cin;
 using std::cout;
+using std::vector;
 
-double eps = 1e-9999;
+const double eps = std::numeric_limits<double>::epsilon();
 const double max_double = std::numeric_limits<double>::max();
 
-class CPoint {
+struct CPoint {
 public:
   CPoint(double x, double y, double z) : x_(x), y_(y), z_(z) {}
-
-  CPoint(const CPoint &a_) : x_(a_.GetX()), y_(a_.GetY()), z_(a_.GetZ()) {}
 
   double GetX() const { return x_; }
 
@@ -28,9 +29,9 @@ private:
 
 // растояние между 2 точками
 double Distance(const CPoint &a, const CPoint &b) {
-  return sqrt((a.GetX() - b.GetX()) * (a.GetX() - b.GetX()) +
-              (a.GetY() - b.GetY()) * (a.GetY() - b.GetY()) +
-              (a.GetZ() - b.GetZ()) * (a.GetZ() - b.GetZ()));
+  return std::sqrt((a.GetX() - b.GetX()) * (a.GetX() - b.GetX()) +
+                   (a.GetY() - b.GetY()) * (a.GetY() - b.GetY()) +
+                   (a.GetZ() - b.GetZ()) * (a.GetZ() - b.GetZ()));
 }
 
 // унарный минус
@@ -48,8 +49,9 @@ CPoint operator-(const CPoint &a, const CPoint &b) { return a + (-b); }
 
 // равенство
 bool operator==(const CPoint &a, const CPoint &b) {
-  if (fabs(a.GetX() - b.GetX()) <= eps && fabs(a.GetY() - b.GetY()) <= eps &&
-      fabs(a.GetZ() - b.GetZ()) <= eps) {
+  if (std::fabs(a.GetX() - b.GetX()) <= eps &&
+      std::fabs(a.GetY() - b.GetY()) <= eps &&
+      std::fabs(a.GetZ() - b.GetZ()) <= eps) {
     return true;
   }
   return false;
@@ -91,15 +93,15 @@ double CommonPerpendicular(const CPoint a, const CPoint b, const CPoint c,
 }
 
 // считаем минимальное растояние от точки x до отрезка mn
-double Perpendicular(const CPoint x, const CPoint m, const CPoint n) {
+double Perpendicular(const CPoint &x, const CPoint &m, const CPoint &n) {
   // если m и n это одна точка, то растояние будет xm
   if (m == n) {
     return Distance(x, m);
   }
   // ищем перпендикуляр из x на mn
-  CPoint u = x - m;
-  CPoint v = n - m;
-  double alpha = (u * v) / (v * v);
+  const auto u = x - m;
+  const auto v = n - m;
+  const double alpha = (u * v) / (v * v);
   // если alpha от 0 до 1, то перпендикуляр падает на отрезок и заодно является
   // самым минимальным растоянием
   if (alpha >= (-eps) && alpha <= 1 + eps) {
@@ -113,66 +115,58 @@ double Perpendicular(const CPoint x, const CPoint m, const CPoint n) {
 }
 
 // считаем минимум между 2 отрезками ab и cd
-double MinDistant(CPoint a, CPoint b, CPoint c, CPoint d) {
+double Distant(const CPoint &a, const CPoint &b, const CPoint &c,
+               const CPoint &d) {
   // считаем 4 потенциально минимальных растояния
-  const auto dis1 = Perpendicular(a, c, d);
-  const auto dis2 = Perpendicular(b, c, d);
-  const auto dis3 = Perpendicular(c, a, b);
-  const auto dis4 = Perpendicular(d, a, b);
+  vector<double> potential_distance;
+  potential_distance.emplace_back(Perpendicular(a, c, d));
+  potential_distance.emplace_back(Perpendicular(b, c, d));
+  potential_distance.emplace_back(Perpendicular(c, a, b));
+  potential_distance.emplace_back(Perpendicular(d, a, b));
   const auto x1 = (b - a).GetX();
   const auto y1 = (b - a).GetY();
   const auto z1 = (b - a).GetZ();
   const auto x2 = (d - c).GetX();
   const auto y2 = (d - c).GetY();
   const auto z2 = (d - c).GetZ();
-  bool degenerate_case = true;
+  bool degenerate_case = false;
   // далее проверяем, являются ли отрезки вырожденным случаем: точки совпадают
   // или отрезки параллельны
-  if (fabs(x1 * y2 - x2 * y1) <= eps && fabs(x1 * z2 - x2 * z1) <= eps &&
-      fabs(y1 * z2 - y2 * z1) <= eps) {
-    degenerate_case = false;
+  if (std::fabs(x1 * y2 - x2 * y1) <= eps &&
+      std::fabs(x1 * z2 - x2 * z1) <= eps &&
+      std::fabs(y1 * z2 - y2 * z1) <= eps) {
+    degenerate_case = true;
   }
   if (a == b) {
-    degenerate_case = false;
+    degenerate_case = true;
   }
   if (c == d) {
-    degenerate_case = false;
+    degenerate_case = true;
   }
-  auto dis5 = max_double;
   // если у нас не вырожденный случай, то мы может посчитать общий перпендикуляр
-  if (degenerate_case) {
-    dis5 = CommonPerpendicular(a, b, c, d);
+  if (!degenerate_case) {
+    potential_distance.emplace_back(CommonPerpendicular(a, b, c, d));
   }
   // далее просто находим минимум из 5 значений
-  double min_distance = dis5;
-  if (dis4 <= min_distance + eps) {
-    min_distance = dis4;
-  }
-  if (dis3 <= min_distance + eps) {
-    min_distance = dis3;
-  }
-  if (dis2 <= min_distance + eps) {
-    min_distance = dis2;
-  }
-  if (dis1 <= min_distance + eps) {
-    min_distance = dis1;
-  }
-  return min_distance;
+  const auto result =
+      std::min_element(potential_distance.begin(), potential_distance.end());
+  return *result;
 }
 
 int main() {
   std::cout.precision(12);
   int x1, y1, z1;
   cin >> x1 >> y1 >> z1;
-  CPoint a(x1, y1, z1);
+  const CPoint a(x1, y1, z1);
   int x2, y2, z2;
   cin >> x2 >> y2 >> z2;
-  CPoint b(x2, y2, z2);
+  const CPoint b(x2, y2, z2);
   int x3, y3, z3;
   cin >> x3 >> y3 >> z3;
-  CPoint c(x3, y3, z3);
+  const CPoint c(x3, y3, z3);
   int x4, y4, z4;
   cin >> x4 >> y4 >> z4;
-  CPoint d(x4, y4, z4);
-  cout << MinDistant(a, b, c, d);
+  const CPoint d(x4, y4, z4);
+  cout << Distant(a, b, c, d) << std::endl;
+  return 0;
 }
