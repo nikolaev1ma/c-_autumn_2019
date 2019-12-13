@@ -9,17 +9,14 @@ using std::vector;
 
 struct CPoint {
 public:
-  CPoint() {}
+  CPoint() = default;
 
   CPoint(double x_, double y_, int counter_ = -1)
-      : x(x_), y(y_), counter(counter_), length(sqrt(x * x + y * y)),
-        sin(y / length) {}
+      : x(x_), y(y_), counter(counter_) {}
 
   double x;
   double y;
   int counter;
-  double length;
-  double sin;
 };
 
 // векторное сложение
@@ -34,35 +31,6 @@ CPoint operator-(const CPoint &a, const CPoint &b) {
 
 // умножение на константу
 CPoint operator*(const CPoint &a, double k) { return CPoint(a.x * k, a.y * k); }
-
-// сравнение по углу
-bool compare_angle(const CPoint &a, const CPoint &b) {
-  // вершина (0, 1) имеет наибольший приоритет, а дальше по часовой стрелке
-  if (a.sin == 1) {
-    return true;
-  }
-  if (b.sin == 1) {
-    return false;
-  }
-  if (a.sin == -1) {
-    return (b.x < 0);
-  }
-  if (b.sin == -1) {
-    return (a.x > 0);
-  }
-  if (a.x > 0 && b.x < 0) {
-    return true;
-  }
-  if (a.x < 0 && b.x > 0) {
-    return false;
-  }
-  if (a.x > 0 && b.x > 0) {
-    return (a.sin > b.sin);
-  }
-  if (a.x < 0 && b.x < 0) {
-    return (a.sin < b.sin);
-  }
-}
 
 vector<CPoint> MinkovskiSum(const vector<CPoint> &a_figure,
                             const vector<CPoint> &b_figure) {
@@ -104,8 +72,9 @@ vector<CPoint> MinkovskiSum(const vector<CPoint> &a_figure,
     const auto next_point_b =
         b_figure[(b_left_down.counter + 1 + counter_b) % b_size];
     // проверка на угол
-    if (compare_angle(next_point_a - current_point_a,
-                      next_point_b - current_point_b)) {
+    const auto v = next_point_a - current_point_a;
+    const auto w = next_point_b - current_point_b;
+    if (v.x * w.y - v.y * w.x <= 0) {
       ++counter_a;
       minkovski_sum[counter_a + counter_b] =
           minkovski_sum[counter_a + counter_b - 1] + next_point_a -
