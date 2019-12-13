@@ -13,35 +13,25 @@ const double max_double = std::numeric_limits<double>::max();
 
 struct CPoint {
 public:
-  CPoint(double x, double y, double z) : x_(x), y_(y), z_(z) {}
+  CPoint(double x_, double y_, double z_) : x(x_), y(y_), z(z_) {}
 
-  double GetX() const { return x_; }
-
-  double GetY() const { return y_; }
-
-  double GetZ() const { return z_; }
-
-private:
-  double x_;
-  double y_;
-  double z_;
+  double x;
+  double y;
+  double z;
 };
 
 // растояние между 2 точками
 double Distance(const CPoint &a, const CPoint &b) {
-  return std::sqrt((a.GetX() - b.GetX()) * (a.GetX() - b.GetX()) +
-                   (a.GetY() - b.GetY()) * (a.GetY() - b.GetY()) +
-                   (a.GetZ() - b.GetZ()) * (a.GetZ() - b.GetZ()));
+  return std::sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) +
+                   (a.z - b.z) * (a.z - b.z));
 }
 
 // унарный минус
-CPoint operator-(const CPoint &a) {
-  return CPoint(-a.GetX(), -a.GetY(), -a.GetZ());
-}
+CPoint operator-(const CPoint &a) { return CPoint(-a.x, -a.y, -a.z); }
 
 // векторное сложение
 CPoint operator+(const CPoint &a, const CPoint &b) {
-  return CPoint(a.GetX() + b.GetX(), a.GetY() + b.GetY(), a.GetZ() + b.GetZ());
+  return CPoint(a.x + b.x, a.y + b.y, a.z + b.z);
 }
 
 // векторная разница
@@ -49,9 +39,8 @@ CPoint operator-(const CPoint &a, const CPoint &b) { return a + (-b); }
 
 // равенство
 bool operator==(const CPoint &a, const CPoint &b) {
-  if (std::fabs(a.GetX() - b.GetX()) <= eps &&
-      std::fabs(a.GetY() - b.GetY()) <= eps &&
-      std::fabs(a.GetZ() - b.GetZ()) <= eps) {
+  if (std::fabs(a.x - b.x) <= eps && std::fabs(a.y - b.y) <= eps &&
+      std::fabs(a.z - b.z) <= eps) {
     return true;
   }
   return false;
@@ -59,11 +48,11 @@ bool operator==(const CPoint &a, const CPoint &b) {
 
 // умножение на константу
 CPoint operator*(const CPoint &a, const double k) {
-  return CPoint(a.GetX() * k, a.GetY() * k, a.GetZ() * k);
+  return CPoint(a.x * k, a.y * k, a.z * k);
 }
 
 double operator*(const CPoint &a, const CPoint &b) {
-  return (a.GetX() * b.GetX()) + (a.GetY() * b.GetY()) + (a.GetZ() * b.GetZ());
+  return (a.x * b.x) + (a.y * b.y) + (a.z * b.z);
 }
 
 // считаем общий перпендикуляр между ab и cd, при условии, что он есть
@@ -115,20 +104,18 @@ double Perpendicular(const CPoint &x, const CPoint &m, const CPoint &n) {
 }
 
 // считаем минимум между 2 отрезками ab и cd
-double Distant(const CPoint &a, const CPoint &b, const CPoint &c,
-               const CPoint &d) {
+double Distance(const CPoint &a, const CPoint &b, const CPoint &c,
+                const CPoint &d) {
   // считаем 4 потенциально минимальных растояния
-  vector<double> potential_distance;
-  potential_distance.emplace_back(Perpendicular(a, c, d));
-  potential_distance.emplace_back(Perpendicular(b, c, d));
-  potential_distance.emplace_back(Perpendicular(c, a, b));
-  potential_distance.emplace_back(Perpendicular(d, a, b));
-  const auto x1 = (b - a).GetX();
-  const auto y1 = (b - a).GetY();
-  const auto z1 = (b - a).GetZ();
-  const auto x2 = (d - c).GetX();
-  const auto y2 = (d - c).GetY();
-  const auto z2 = (d - c).GetZ();
+  vector<double> potential_distance = {
+      Perpendicular(a, c, d), Perpendicular(b, c, d), Perpendicular(c, a, b),
+      Perpendicular(d, a, b)};
+  const auto x1 = (b - a).x;
+  const auto y1 = (b - a).y;
+  const auto z1 = (b - a).z;
+  const auto x2 = (d - c).x;
+  const auto y2 = (d - c).y;
+  const auto z2 = (d - c).z;
   bool degenerate_case = false;
   // далее проверяем, являются ли отрезки вырожденным случаем: точки совпадают
   // или отрезки параллельны
@@ -167,6 +154,6 @@ int main() {
   int x4, y4, z4;
   cin >> x4 >> y4 >> z4;
   const CPoint d(x4, y4, z4);
-  cout << Distant(a, b, c, d) << std::endl;
+  cout << Distance(a, b, c, d) << std::endl;
   return 0;
 }
