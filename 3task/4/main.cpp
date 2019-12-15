@@ -16,33 +16,26 @@ using std::vector;
 const double eps = std::numeric_limits<double>::epsilon();
 
 struct CPoint {
-public:
-  CPoint() {}
+  CPoint() = default;
 
-  CPoint(double x, double y, int counter) : x_(x), y_(y), counter_(counter) {}
+  CPoint(double x_, double y_, int counter_)
+      : x(x_), y(y_), counter(counter_) {}
 
-  double GetX() const { return x_; }
+  double Length() const { return std::sqrt(x * x + y * y); }
 
-  double GetY() const { return y_; }
+  // равенство вершин
+  bool operator==(const CPoint &other) const {
+    return ((x == other.x) && (y == other.y));
+  }
 
-  double Length() const { return sqrt(x_ * x_ + y_ * y_); }
-
-  int GetCounter() const { return counter_; }
-
-private:
-  double x_; // координаты
-  double y_;
-  int counter_; // индекс вершины в множестве
+  double x; // координаты
+  double y;
+  int counter; // индекс вершины в множестве
 };
 
 // векторная разность
 CPoint operator-(const CPoint &a, const CPoint &b) {
-  return CPoint(a.GetX() - b.GetX(), a.GetY() - b.GetY(), -1);
-}
-
-// равернство вершин
-bool operator==(const CPoint &a, const CPoint &b) {
-  return ((a.GetX() == b.GetX()) && (a.GetY() == b.GetY()));
+  return CPoint(a.x - b.x, a.y - b.y, -1);
 }
 
 // растояние между точками
@@ -52,34 +45,34 @@ double Distance(const CPoint &a, const CPoint &b) {
 }
 
 // сравнение по координате x
-struct compare {
-  bool operator()(const CPoint &a, const CPoint &b) {
-    return (a.GetX() < b.GetX());
-  }
+struct PointCompare {
+  bool operator()(const CPoint &a, const CPoint &b) { return (a.x < b.x); }
 };
 
-// считаем косиус угла bac
-double Cos(const CPoint &b, const CPoint &a, const CPoint &c) {
-  const auto ab = Distance(a, b);
-  const auto ac = Distance(a, c);
-  const auto bc = Distance(b, c);
-  return (ab * ab + ac * ac - bc * bc) / (2 * ab * ac);
+// считаем не нормированный косиус угла bac
+double NotRationedCos(const CPoint &b, const CPoint &a, const CPoint &c) {
+  const auto v = b - a;
+  const auto w = c - a;
+  return (v.x * w.x + v.y * w.y);
 }
 
-// считаем синус угла bac
-double Sin(const CPoint &b, const CPoint &a, const CPoint &c) {
-  const auto cos = Cos(b, a, c);
-  return abs(sqrt(1 - cos * cos));
+// считаем не нормированный синус угла bac
+double NotRationedSin(const CPoint &b, const CPoint &a, const CPoint &c) {
+  const auto v = b - a;
+  const auto w = c - a;
+  return std::abs(v.x * w.y - v.y * w.x);
 }
 
 // есть 2 треугольника abc и abd.  мы хотим проверить, что они удоволетворяют
 // условию Делоне
 bool GoodEdge(const CPoint &a, const CPoint &b, const CPoint &c,
               const CPoint &d) {
-  if (d.GetCounter() == -1 || c.GetCounter() == -1) {
+  if (d.counter == -1 || c.counter == -1) {
     return true;
   }
-  return (Sin(a, c, b) * Cos(a, d, b) + Sin(a, d, b) * Cos(a, c, b) > -eps);
+  return (NotRationedSin(a, c, b) * NotRationedCos(a, d, b) +
+              NotRationedSin(a, d, b) * NotRationedCos(a, c, b) >
+          -eps);
 }
 
 // ребро
@@ -95,24 +88,22 @@ struct CPointPair {
 };
 
 // хеш для пары вершин
-namespace std {
-template <> struct hash<CPointPair> {
+template <> struct std::hash<CPointPair> {
+  hash<double> hash_fn;
   std::size_t operator()(const CPointPair &k) const {
-    return hash<double>()(k.a.GetX()) ^ hash<double>()(k.a.GetY()) ^
-           hash<double>()(k.b.GetX()) ^ hash<double>()(k.b.GetY());
+    return hash_fn(k.a.x) ^ hash_fn(k.a.y) ^ hash_fn(k.b.x) ^ hash_fn(k.b.y);
   }
 };
-} // namespace std
 
 class Triangulation {
 public:
   Triangulation();
 
-  void AddPoint(double x, double y); // добавление вершины в наше множестов
+  void AddPoint(const CPoint &point); // добавление вершины в наше множестов
 
-  void Construction(); // построение триангуляции Делоне
+  void Build(); // построение триангуляции Делоне
 
-  double AverageDig()
+  double AverageDeg()
       const; // среднее значение степеней вершин внутри выкуплой оболочки
 
 private:
@@ -121,10 +112,9 @@ private:
   // вершины, которые образуют смежные треугольники триангуляции
   unordered_map<CPointPair, CPointPair> edge;
   vector<CPoint> shell; // вершины текущей выкуплой оболочки
-  int ver_count; // колво вершин
 
-  void Step(const int counter); // шаг построения. Обновление триангуляции для
-                                // нового множества вершин
+  void Step(const int &counter); // шаг построения. Обновление триангуляции для
+                                 // нового множества вершин
 
   // обновление выпуклой оболочки на очередном шаге. Возвращает множесто видимых
   // вершин
@@ -133,28 +123,28 @@ private:
   // обновление ребер, смежных с добавляемой вершиной
   void EdgeUpdate(const vector<CPoint> &visible, const int counter);
 
-  void Stack(const vector<CPoint> &visible, const int counter); // стек
+  // проходимся вглубь ранее построенной триангуляции, изменяя при необходимости
+  // ребра, если они "плохие"
+  void Stack(const vector<CPoint> &visible, const int counter);
 };
 
-Triangulation::Triangulation()
-    : ver_count(0), point_arr(0), edge(0), shell(0) {}
+Triangulation::Triangulation() : point_arr(0), edge(0), shell(0) {}
 
-void Triangulation::AddPoint(double x, double y) {
-  point_arr.emplace_back(x, y, ver_count);
-  ++ver_count;
+void Triangulation::AddPoint(const CPoint &point) {
+  point_arr.emplace_back(point);
 }
 
-void Triangulation::Construction() {
+void Triangulation::Build() {
   // для начала сортируем все вершины по координтате x
-  std::sort(point_arr.begin(), point_arr.end(), compare());
+  std::sort(point_arr.begin(), point_arr.end(), PointCompare());
   // далее делаем инициализацию для начального треугольника
   // в edge будем поддерживать инвариант, что если у нас есть infinity, то мы
   // будем его закидывать во второй аргумент value
   const auto infinity =
       CPoint(0, 0, -1); // должны остлеживать, что ребро граничное
-  const CPoint first = point_arr[0];
-  const CPoint second = point_arr[1];
-  const CPoint third = point_arr[2];
+  const CPoint &first = point_arr[0];
+  const CPoint &second = point_arr[1];
+  const CPoint &third = point_arr[2];
   edge[{first, second}] = {third, infinity};
   edge[{second, third}] = {first, infinity};
   edge[{third, first}] = {second, infinity};
@@ -164,20 +154,19 @@ void Triangulation::Construction() {
   shell.emplace_back(first);
   // дедаем пошаговое обновление триангуляции, каждый раз добавляя по одной
   // вершине в триангуляцию
-  for (int counter = 3; counter < ver_count; ++counter) {
+  for (int counter = 3; counter < point_arr.size(); ++counter) {
     Step(counter);
   }
 }
 
 // добавляем в множесто point[counter]
-void Triangulation::Step(const int counter) {
+void Triangulation::Step(const int &counter) {
   // сначала обновляем выпуклую оболчку и нахдим видимые вершины для
   // point_arr[counter]
-  vector<CPoint> visible = ShellUpdate(counter);
+  const auto visible = ShellUpdate(counter);
   // далее обноляем триангуляцию
   EdgeUpdate(visible, counter);
   Stack(visible, counter);
-  return;
 }
 
 vector<CPoint> Triangulation::ShellUpdate(const int counter) {
@@ -197,8 +186,8 @@ vector<CPoint> Triangulation::ShellUpdate(const int counter) {
     // пока прямая (current, next) разделяет плоскость на 2 полуплоскости, где
     // added и все остальные точки лежат по разные стороны, current видима для
     // этого посчитаем скаляр (v, w) и (v, p). Они должны быть разного знака
-    const auto scalar1 = v.GetX() * w.GetY() - v.GetY() * w.GetX();
-    const auto scalar2 = v.GetX() * p.GetY() - v.GetY() * p.GetX();
+    const auto scalar1 = v.x * w.y - v.y * w.x;
+    const auto scalar2 = v.x * p.y - v.y * p.x;
     if (scalar1 * scalar2 > 0) {
       break;
     }
@@ -218,8 +207,8 @@ vector<CPoint> Triangulation::ShellUpdate(const int counter) {
     const auto v = next_point - current_point;
     const auto w = in_shell - current_point;
     const auto p = added - current_point;
-    const double scalar1 = v.GetX() * w.GetY() - v.GetY() * w.GetX();
-    const double scalar2 = v.GetX() * p.GetY() - v.GetY() * p.GetX();
+    const double scalar1 = v.x * w.y - v.y * w.x;
+    const double scalar2 = v.x * p.y - v.y * p.x;
     if (scalar1 * scalar2 > 0) {
       break;
     }
@@ -246,7 +235,7 @@ vector<CPoint> Triangulation::ShellUpdate(const int counter) {
 void Triangulation::EdgeUpdate(const vector<CPoint> &visible,
                                const int counter) {
   const auto added = point_arr[counter];
-  // проходимся по видимым вершинам и извеняем ребра между этими вершинами
+  // проходимся по видимым вершинам и изменяем ребра между этими вершинами
   // раньше эти вершины имели вторым аргументов в value - infinity - теперь
   // added
   for (int i = 1; i < visible.size(); ++i) {
@@ -295,29 +284,33 @@ void Triangulation::Stack(const vector<CPoint> &visible, const int counter) {
       // обновляем ребра в четырехугольнике
       edge.erase({a, b});
       edge[{c, d}] = {a, b};
-      if (edge[{c, a}].b == b) {
-        edge[{c, a}].b = d;
+      auto &ca = edge[{c, a}];
+      if (ca.b == b) {
+        ca.b = d;
       } else {
-        const auto tmp = edge[{c, a}].b;
-        edge[{c, a}].b = d;
-        edge[{c, a}].a = tmp;
+        const auto tmp = ca.b;
+        ca.b = d;
+        ca.a = tmp;
       }
-      if (edge[{c, b}].b == a) {
-        edge[{c, b}].b = d;
+      auto &cb = edge[{c, b}];
+      if (cb.b == a) {
+        cb.b = d;
       } else {
-        const auto tmp = edge[{c, b}].b;
-        edge[{c, b}].b = d;
-        edge[{c, b}].a = tmp;
+        const auto tmp = cb.b;
+        cb.b = d;
+        cb.a = tmp;
       }
-      if (edge[{a, d}].a == b) {
-        edge[{a, d}].a = c;
+      auto &ad = edge[{a, d}];
+      if (ad.a == b) {
+        ad.a = c;
       } else {
-        edge[{a, d}].b = c;
+        ad.b = c;
       }
-      if (edge[{b, d}].a == a) {
-        edge[{b, d}].a = c;
+      auto &bd = edge[{b, d}];
+      if (bd.a == a) {
+        bd.a = c;
       } else {
-        edge[{b, d}].b = c;
+        bd.b = c;
       }
       // добавление в стек
       s.push({b, c});
@@ -329,40 +322,43 @@ void Triangulation::Stack(const vector<CPoint> &visible, const int counter) {
 // нужно найти среднее значение степеней вершин внутри выпуклой оболочке
 // тк это двойственно среднему значению колву ребер в ограниченных гранях в
 // диаграмме воронова
-double Triangulation::AverageDig() const {
+double Triangulation::AverageDeg() const {
   // проверка на то, что вершина лежит в выпуклой оболчке
-  vector<bool> is_shell(ver_count);
-  for (const auto e : shell) {
-    is_shell[e.GetCounter()] = true;
+  vector<bool> is_shell(point_arr.size());
+  for (const auto &e : shell) {
+    is_shell[e.counter] = true;
   }
   // суммарная степень "нужных" вершин
   int deg_sum = 0;
-  for (const auto e : edge) {
+  for (const auto &e : edge) {
     // если конец ребра лежит внутри выпуклой оболочки, то увеличим сумму
-    if (!is_shell[e.first.a.GetCounter()]) {
+    if (!is_shell[e.first.a.counter]) {
       ++deg_sum;
     }
-    if (!is_shell[e.first.b.GetCounter()]) {
+    if (!is_shell[e.first.b.counter]) {
       ++deg_sum;
     }
   }
   // колво вершин внутри выпуклой оболочки
-  double norm_counter = ver_count - shell.size();
+  double norm_counter = point_arr.size() - shell.size();
   if (norm_counter == 0) {
     return 0;
   }
-  double result = deg_sum / norm_counter;
-  return result;
+  return deg_sum / norm_counter;
 }
 
 int main() {
-  std::cout.precision(12);
+  std::cout.precision(7);
+  cout << std::fixed;
   double x, y;
-  Triangulation my_class;
+  Triangulation triangulation_build;
+  int i = 0;
   while (cin >> x) {
     cin >> y;
-    my_class.AddPoint(x, y);
+    const auto point = CPoint(x, y, i);
+    triangulation_build.AddPoint(point);
+    ++i;
   }
-  my_class.Construction(); // строим триангуляцию
-  cout << my_class.AverageDig() << '\n';
+  triangulation_build.Build(); // строим триангуляцию
+  cout << triangulation_build.AverageDeg() << '\n';
 }
