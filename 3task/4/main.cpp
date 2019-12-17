@@ -1,6 +1,9 @@
+// ссылка на контест:
+// https://contest.yandex.ru/contest/14982/run-report/29027112/
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <list>
 #include <stack>
 #include <unordered_map>
 #include <vector>
@@ -46,7 +49,9 @@ double Distance(const CPoint &a, const CPoint &b) {
 
 // сравнение по координате x
 struct PointCompare {
-  bool operator()(const CPoint &a, const CPoint &b) { return (a.x < b.x); }
+  bool operator()(const CPoint &a, const CPoint &b) const {
+    return (a.x < b.x);
+  }
 };
 
 // считаем не нормированный косиус угла bac
@@ -88,7 +93,7 @@ struct CPointPair {
 };
 
 // хеш для пары вершин
-template <> struct std::hash<CPointPair> {
+struct HahCpointPair {
   hash<double> hash_fn;
   std::size_t operator()(const CPointPair &k) const {
     return hash_fn(k.a.x) ^ hash_fn(k.a.y) ^ hash_fn(k.b.x) ^ hash_fn(k.b.y);
@@ -110,8 +115,8 @@ private:
   vector<CPoint> point_arr; // массив вершин
   // edge - множество ребер триангуляции , где каждому ребру сопоставляется 2
   // вершины, которые образуют смежные треугольники триангуляции
-  unordered_map<CPointPair, CPointPair> edge;
-  vector<CPoint> shell; // вершины текущей выкуплой оболочки
+  unordered_map<CPointPair, CPointPair, HahCpointPair> edge;
+  std::list<CPoint> shell; // вершины текущей выкуплой оболочки
 
   void Step(const int &counter); // шаг построения. Обновление триангуляции для
                                  // нового множества вершин
@@ -125,7 +130,8 @@ private:
 
   // проходимся вглубь ранее построенной триангуляции, изменяя при необходимости
   // ребра, если они "плохие"
-  void Stack(const vector<CPoint> &visible, const int counter);
+  void UpdateEdgeInTriangulation(const vector<CPoint> &visible,
+                                 const int counter);
 };
 
 Triangulation::Triangulation() : point_arr(0), edge(0), shell(0) {}
@@ -149,9 +155,9 @@ void Triangulation::Build() {
   edge[{second, third}] = {first, infinity};
   edge[{third, first}] = {second, infinity};
 
-  shell.emplace_back(third);
-  shell.emplace_back(second);
-  shell.emplace_back(first);
+  shell.push_back(third);
+  shell.push_back(second);
+  shell.push_back(first);
   // дедаем пошаговое обновление триангуляции, каждый раз добавляя по одной
   // вершине в триангуляцию
   for (int counter = 3; counter < point_arr.size(); ++counter) {
@@ -166,20 +172,30 @@ void Triangulation::Step(const int &counter) {
   const auto visible = ShellUpdate(counter);
   // далее обноляем триангуляцию
   EdgeUpdate(visible, counter);
-  Stack(visible, counter);
+  UpdateEdgeInTriangulation(visible, counter);
 }
 
 vector<CPoint> Triangulation::ShellUpdate(const int counter) {
   const auto added = point_arr[counter]; // добавляемая вершина
+  auto it_shell = shell.begin();
   int i = 0;
   // хотим поддерживать, что shell[0] это всегда point_arr[counter - 1]
   // также хотим поддерживать, что в shell вершины лежат в порядке обходе вершин
   // по выпуклой оболочке очевидно, что point_arr[counter - 1] видима для
   // point_arr[counter]
   while (true) {
-    const auto current_point = shell[i];
-    const auto next_point = shell[(i + 1) % shell.size()];
-    const auto in_shell = shell[(i + 2) % shell.size()];
+    auto tmp_it = it_shell;
+    const auto current_point = *tmp_it;
+    ++tmp_it;
+    if (tmp_it == shell.end()) {
+      ++tmp_it; // замкнулись
+    }
+    const auto next_point = *tmp_it;
+    ++tmp_it;
+    if (tmp_it == shell.end()) {
+      ++tmp_it;
+    }
+    const auto in_shell = *tmp_it;
     const auto v = next_point - current_point;
     const auto w = in_shell - current_point;
     const auto p = added - current_point;
@@ -191,6 +207,10 @@ vector<CPoint> Triangulation::ShellUpdate(const int counter) {
     if (scalar1 * scalar2 > 0) {
       break;
     }
+    ++it_shell;
+    if (it_shell == shell.end()) {
+      ++it_shell;
+    }
     i = (i + 1) % shell.size();
   }
   // обозначим границы видимого куска
@@ -200,10 +220,19 @@ vector<CPoint> Triangulation::ShellUpdate(const int counter) {
   // теперь идем в противоположную сторону, по ходу добавляя вершины в visible
   while (true) {
     // то же самое
-    const auto current_point = shell[i];
-    const auto next_point = shell[(i - 1 + shell.size()) % shell.size()];
-    const auto in_shell = shell[(i - 2 + shell.size()) % shell.size()];
-    visible.emplace_back(shell[i]);
+    auto tmp_it = it_shell;
+    const auto current_point = *tmp_it;
+    --tmp_it;
+    if (tmp_it == shell.end()) {
+      --tmp_it;
+    }
+    const auto next_point = *tmp_it;
+    --tmp_it;
+    if (tmp_it == shell.end()) {
+      --tmp_it;
+    }
+    const auto in_shell = *tmp_it;
+    visible.emplace_back(current_point);
     const auto v = next_point - current_point;
     const auto w = in_shell - current_point;
     const auto p = added - current_point;
@@ -214,24 +243,33 @@ vector<CPoint> Triangulation::ShellUpdate(const int counter) {
     }
     i = (i - 1 + shell.size()) % shell.size();
     right_border = i;
+    --it_shell;
+    if (it_shell == shell.end()) {
+      --it_shell;
+    }
   }
   // удаляем из выпуклой оболочке ненужные вершины, поддерживая принцип,
   // описанный выше
   if (right_border == 0) {
-    const auto begin = shell[0];
-    shell.erase(shell.begin(), shell.begin() + left_border);
+    const auto begin = *(shell.begin());
+    auto it = shell.begin();
+    std::advance(it, left_border);
+    shell.erase(shell.begin(), it);
     shell.push_back(begin);
   } else {
     if (right_border != shell.size() - 1) {
-      shell.erase(shell.begin() + right_border + 1, shell.end());
+      auto it = shell.begin();
+      std::advance(it, right_border + 1);
+      shell.erase(it, shell.end());
     }
-    shell.erase(shell.begin(), shell.begin() + left_border);
+    auto it = shell.begin();
+    std::advance(it, left_border);
+    shell.erase(shell.begin(), it);
   }
   shell.insert(shell.begin(), added);
   return visible;
 }
 
-//
 void Triangulation::EdgeUpdate(const vector<CPoint> &visible,
                                const int counter) {
   const auto added = point_arr[counter];
@@ -241,9 +279,7 @@ void Triangulation::EdgeUpdate(const vector<CPoint> &visible,
   for (int i = 1; i < visible.size(); ++i) {
     const auto current_point = visible[i - 1];
     const auto next_point = visible[i];
-    CPointPair cp = edge[{current_point, next_point}];
-    cp.b = added;
-    edge[{current_point, next_point}] = cp;
+    edge[{current_point, next_point}].b = added;
   }
   // теперь добавляем смежные с added ребра
   const auto infinity = CPoint(0, 0, -1);
@@ -258,7 +294,8 @@ void Triangulation::EdgeUpdate(const vector<CPoint> &visible,
   }
 }
 
-void Triangulation::Stack(const vector<CPoint> &visible, const int counter) {
+void Triangulation::UpdateEdgeInTriangulation(const vector<CPoint> &visible,
+                                              const int counter) {
   stack<CPointPair> s; // стек ребер
   // закидываем в стек ребра из visible
   // будем поддерживать инвариант, что, edge[].a "направлен внутрь" множества
