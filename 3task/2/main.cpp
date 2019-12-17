@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -94,7 +95,8 @@ struct Plane {
 
 // Есть плоскость  A*x + B*y + C*z + D = 0, и есть отрезок ab. Хотим найти синус
 // угла между ними
-double SinFromLineAndPlane(const CPoint &a, const CPoint &b, Vector normal) {
+double SinFromLineAndPlane(const CPoint &a, const CPoint &b,
+                           const Vector &normal) {
   CPoint v = b - a;
   return (normal.x * v.x + normal.y * v.y + normal.z * v.z) /
          (normal.Length() * v.Length());
@@ -128,7 +130,7 @@ public:
 private:
   vector<CPoint> points; // массив вершин
   vector<Edge> edge; // стек ребер, описание каждого ребра написано выше
-  vector<vector<int>>
+  vector<std::array<int, 3>>
       plane; // массив граней. plane[i] это просто vector из 3 вершин
 
   Plane SearchLowerPlane() const; // нахождение нижней грани
@@ -180,7 +182,6 @@ Plane ConvexHull::SearchLowerPlane() const {
   // градусов и first.z = additional.z
   const auto additional = CPoint(second.y - first.y + first.x,
                                  first.x - second.x + first.y, first.z);
-  ;
   double max_cos = 0;
   for (const auto &point : points) {
     if (point == first || point == second) {
@@ -219,7 +220,7 @@ void ConvexHull::AddingFacet(const Plane &lower_plane) {
   }
   while (!edge.empty()) {
     // достаем из начала "стека" ребро
-    const auto current_edge = edge[0];
+    const auto &current_edge = edge[0];
     const auto &current_start = points[current_edge.start];
     const auto &current_end = points[current_edge.end];
     const auto &current_face = points[current_edge.face_point];
@@ -312,13 +313,13 @@ void ConvexHull::SortFacet() {
     plane[sz] = {plane[sz][it], plane[sz][(it + 1) % 3],
                  plane[sz][(it + 2) % 3]};
   }
-  // сортируем с помощью компоратора с лексиграфическим порядком
+  // сортируем с помощью компаратора с лексиграфическим порядком
   std::sort(plane.begin(), plane.end());
 }
 
 void ConvexHull::DescriptionOfFacet() const {
   cout << plane.size() << '\n';
-  for (const auto element : plane) {
+  for (const auto &element : plane) {
     cout << "3 " << element[0] << " " << element[1] << " " << element[2]
          << "\n";
   }
